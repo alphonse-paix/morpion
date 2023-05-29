@@ -52,12 +52,14 @@ public:
     Grid(int size);
     void display() const;
     Game_result state() const;
-    void update(int pos, Player player);
+    void update(Player& player);
 
 private:
     int m_size;
     std::vector<Mark> m_marks;
     std::vector<Line_pos> m_lines_pos;
+
+    int get_pos(Player player);
 };
 
 Grid::Grid(int size) : m_size{ size }
@@ -114,10 +116,19 @@ void Grid::display() const
     }
 }
 
-void Grid::update(int pos, Player player)
+void switch_player(Player&);
+
+void Grid::update(Player& player)
 {
-    assert(pos >= 0 && pos < std::size(m_marks));
-    m_marks[pos] = static_cast<Mark>(player);
+    while (true) {
+        int pos = get_pos(player);
+        if (m_marks[pos] == Mark::empty) {
+            m_marks[pos] = static_cast<Mark>(player);
+            switch_player(player);
+            return;
+        }
+        std::cout << "This position is already played.\n";
+    }
 }
 
 Game_result Grid::state() const
@@ -161,16 +172,39 @@ Game_result Grid::state() const
     return Game_result::running;
 }
 
+void prompt(Player player);
+
+void ignore_line()
+{
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}
+
+int Grid::get_pos(Player player)
+{
+    int i;
+    while (true) {
+        prompt(player);
+        std::cin >> i;
+        if (!std::cin) {
+            std::cout << "Please enter a number.\n";
+            std::cin.clear();
+            ignore_line();
+        }
+        else if (i < 0 || i >= m_size * m_size) {
+            std::cout << "Please enter a number in the valid range"
+                " (0-" << m_size * m_size - 1 << ").\n";
+            ignore_line();
+        }
+        else {
+            ignore_line();
+            return i;
+        }
+    }
+}
+
 void prompt(Player player)
 {
     std::cout << "\tPlayer " << static_cast<int>(player) + 1 << ": ";
-}
-
-int get_pos()
-{
-    int i;
-    std::cin >> i;
-    return i;
 }
 
 void switch_player(Player& player)
@@ -182,22 +216,37 @@ void switch_player(Player& player)
     player = Player::one;
 }
 
+void print_results(Game_result results)
+{
+    switch (results) {
+    case Game_result::one:
+        std::cout << "Player 1 wins!\n";
+        return;
+    case Game_result::two:
+        std::cout << "Player 2 wins!\n";
+        return;
+    case Game_result::tie:
+        std::cout << "Tie!\n";
+        return;
+    default:
+        std::cout << "??\n";
+        return;
+    }
+}
 
 int main()
 {
+    std::cout << "~~~~~~~TIC-TAC-TOE~~~~~~~\n";
+
     Grid grid{ 3 };
-    std::cout << "~~~~~~~TIC TAC TOE~~~~~~~\n";
     grid.display();
     Player player{ Player::one };
     while (grid.state() == Game_result::running) {
-        prompt(player);
-        int i = get_pos();
-        grid.update(i, player);
-        switch_player(player);
+        grid.update(player);
         grid.display();
     }
 
-    std::cout << static_cast<int>(grid.state()) << '\n';
+    print_results(grid.state());
 
     return 0;
 }
