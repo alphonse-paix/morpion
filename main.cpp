@@ -6,6 +6,10 @@
 
 //#define DEBUG
 
+//À faire :
+//    - implémenter \r pour améliorer l'affichage
+//    - refactoriser le code
+
 void print_vec(auto v)
 {
     for (auto elem : v)
